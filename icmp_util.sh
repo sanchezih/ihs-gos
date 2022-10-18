@@ -31,6 +31,7 @@ function mostrar_ayuda()
 	echo "    -b        Permite enviar paquetes a direcciones de broadcast"  
 }
 
+# Funcion que valida si el parametro nro. 1 que recibe es una direccion ip valida
 function validar_direccion_ip()
 {
     local  ip=$1
@@ -48,28 +49,51 @@ function validar_direccion_ip()
     return $stat
 }
 
+# Funcion que valida si el parametro nro. 1 que recibe es un nombre de dominio valido
+function validar_nombre()
+{
+	validate="^([a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]\.)+[a-zA-Z]{2,}$"
+
+	if [[ "$1" =~ $validate ]]; then
+    	return 0
+	else
+	    return 1
+	fi
+}
+
+# Funcion que valida si el parametro nro. 1 que recibe cumpla con lo pedido en el requerimiento
+function validar_ultimo_param()
+{
+	validar_direccion_ip $1
+	if [ $? -ne 0 ]; then
+		validar_nombre $1
+		if [ $? -ne 0 ]; then
+			return 1
+		else
+			return 0
+		fi
+	else
+		return 0
+	fi
+}
+
 #------------------------------------------------------------------------------#
-clear
 
 # Variable booleana que se modificara a false si se produce algun error en cualquiera de las validaciones que se haran
 esta_todo_ok=true
 
 cant_opciones=0
-
 args=( $@ )
 
-validar_direccion_ip ${args[-1]}
-
+validar_ultimo_param ${args[-1]}
 if [ $? -ne 0 ]; then
 	esta_todo_ok=false
 	echo "ERROR: Debe ingresar un host/ip/hostname/dominio valido"
 	mostrar_ayuda
 	exit 1
 else
-	protocolo_elegido=0
-
 	for opcion in "${!args[@]}"; do
-
+		
 		case ${args[$opcion]} in
 
 			-C)	cantidad=${args[$(($opcion+1))]}
@@ -78,7 +102,7 @@ else
 
 				# Valido que el numero sea entero positivo
 				if ! [[ $cantidad =~ ^[0-9]+$ ]]  2> /dev/null; then
-					echo "number not valid"
+					echo "ERROR: Cantidad de pings no valida"
 					esta_todo_ok=false
 				fi
 
@@ -96,7 +120,7 @@ else
 
 				# Valido que el protocolo ingresado sea 4 o 6
 				if ! [[ $proto -eq 4 || $proto -eq 6 ]]; then
-					echo "Protocolo invalido"
+					echo "ERROR: Protocolo invalido"
 					esta_todo_ok=false
 				fi
 
@@ -106,15 +130,21 @@ else
 	        -b)	b="-b"
 
 				((cant_opciones=cant_opciones+1))
-
 				;;
+
+			# Valido que no se pasen opciones incorrectas o inexistentes.
+			-*)	echo "ERROR: Alguna de las opciones ingresada es incorrecta"
+				mostrar_ayuda
+				exit 1
+				;;
+
 		esac
 	done
 fi
 
 # Valido que se reciba al menos una opcion
 if [ $cant_opciones -eq 0 ]; then
-	echo "ERROR: El script debe recibir al menos una opcion ademas del argumento host/ip."
+	echo "ERROR: El script debe recibir al menos una opcion ademas del argumento host/ip"
 	mostrar_ayuda
 	exit 1
 fi
@@ -122,6 +152,7 @@ fi
 # Si luego de hacer todas las validaciones no veo que haya ningun problema, ejecuto el ping
 if [ "$esta_todo_ok" = true ]; then
 	echo "TODO OK!: Se va a ejecutar el comando ping"
+	echo
 	ping $b $timestamp $p $counter ${args[-1]}
 else
 	echo "ERROR: No se puede ejecutar el comando ping"
