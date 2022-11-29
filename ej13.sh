@@ -10,7 +10,7 @@ function now() {
 
 function create_dirlog() {
     if [ ! -d $log_dir ]; then
-        mkdir $log_dir
+        mkdir $log_dir # Creo el directorio para guardar los logs
     fi
 }
 
@@ -43,16 +43,16 @@ function salir_saludando(){
 
 OPCION=0
 mostrar_menu
-while true; do
+while true; do # Bucle infinito
     read -p "Ingrese una opcion (m para mostrar el menu): " OPCION # Mensaje y read en la misma linea
  
     case $OPCION in
-        1)  echo "-> El directorio actual es:" `pwd`
+        1)  echo "-> El directorio actual es: " `pwd`
             ;;
 
         ########################################################################
 
-        2)  echo "Ingrese el nombre del directorio:"
+        2)  echo "Ingrese el nombre del directorio:" # Capturo lo que se escribe por consola, pero en 2 lineas
             read NOMBRE_DIR
 
             if [ -d "$NOMBRE_DIR" ]; then
@@ -67,7 +67,7 @@ while true; do
         3)  read -p "Ingrese el nombre del directorio a crear: " NOMBRE_DIR
             mkdir $NOMBRE_DIR 2>/dev/null # Envio a la nada el retorno de mkdir
 
-            if [ $? -ne 0 ]; then
+            if [ $? -ne 0 ]; then # Verificar si el mkdir termino ok o no
                 echo "ERROR: No se puede crear el directorio $NOMBRE_DIR"
             else
                 echo "OK!: El directorio $NOMBRE_DIR fue creado con exito"
@@ -76,28 +76,29 @@ while true; do
 
         ########################################################################
 
-        4)  for file in /etc/*
+        4)  for file in /etc/* # Analizo cada archivo que haya dentro de /etc/*
             do
-                if [ "${file}" == "/etc/resolv.conf" ]
+                if [ "${file}" == "/etc/resolv.conf" ] # Verifico que un archivo X sea el resolv.conf
                 then
                     countNameservers=$(grep -c nameserver /etc/resolv.conf)
                     echo "Hay ${countNameservers} nameservers definidos en ${file}"
-                    break
+                    break # Salgo del bucle for
                 fi
             done
             ;;
 
         ########################################################################
 
-        5)  base_name=$(basename -- "$0")
-            log_dir=~/$base_name'_'logs
+        5)  base_name=$(basename -- "$0") # Nombre del script sin el ./
+            log_dir=~/$base_name'_'logs # /home/gabriel/ej13.sh_logs
 
             create_dirlog
             if [ $? -ne 0 ]; then
                 echo "ERROR: No se puede crear el directorio de logs"
-            elif [[ -z "${BACKUP_DIR}" ]]; then
+            elif [[ -z "${BACKUP_DIR}" ]]; then # Valido que exista la variable en el .bashrc
                 echo "ERROR: El directorio destino no esta seteado como variable de entorno"
             else
+                # Creo el nombre que va a tener el log
                 logfile=$log_dir/$base_name'_'`now`.log
 
                 read -p "Ingrese la ruta del directorio que quiere backupear: " DIR_A_BACKUPEAR
@@ -133,7 +134,8 @@ while true; do
 
         ########################################################################
 
-        6)  login_todos="/tmp/listado-de-ingresos.txt"
+        6)  # Genero 2 archivos con los login de: todos los usuarios y root
+            login_todos="/tmp/listado-de-ingresos.txt"
             login_root="/tmp/listado-de-ingresos-root.txt"
 
             last | tee $login_todos | grep root > $login_root
